@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Admin — OOS Lookup</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#06080f;--surface:#0e1120;--surface2:#161929;--border:#1e2235;--accent:#00d4ff;--accent2:#a78bfa;--green:#10b981;--orange:#f59e0b;--red:#ef4444;--text:#dde3f0;--muted:#5a6380}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:700px;height:700px;background:radial-gradient(circle,rgba(167,139,250,.04) 0%,transparent 65%);pointer-events:none}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700}
+.brand span{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+.topbar-actions{display:flex;gap:10px}
+.btn-sm{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Syne',sans-serif;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+
+main{max-width:880px;margin:0 auto;padding:40px 24px;position:relative;z-index:1}
+.section-label{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:14px}
+
+/* Status card */
+.status-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 32px;margin-bottom:32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.status-left{display:flex;align-items:center;gap:16px}
+.pulse-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;transition:all .3s}
+.pulse-dot.active{background:var(--green);box-shadow:0 0 10px rgba(16,185,129,.5);animation:pulse 2s infinite}
+.pulse-dot.inactive{background:var(--muted)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.status-text h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.status-text p{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace}
+.stats-group{display:flex;gap:28px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-val{font-size:28px;font-weight:800;color:var(--accent);font-family:'Syne',sans-serif}
+.stat-lbl{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px}
+
+/* Alert render */
+.alert-render{background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:14px;padding:16px 20px;margin-bottom:32px;display:flex;align-items:flex-start;gap:12px;font-size:13px;color:var(--text);line-height:1.6}
+.alert-render .icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.alert-render strong{color:var(--accent2)}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:18px;padding:52px 32px;text-align:center;cursor:pointer;transition:all .25s;background:var(--surface);position:relative;overflow:hidden;margin-bottom:32px}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent2);background:rgba(167,139,250,.04)}
+.upload-zone.busy{pointer-events:none;opacity:.7}
+.file-input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-icon{font-size:44px;margin-bottom:14px}
+.upload-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.upload-sub{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace}
+.file-types{display:inline-flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.file-type{padding:4px 12px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
+
+/* Progress */
+.prog-wrap{margin-top:24px;display:none}
+.prog-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .4s;width:0}
+.prog-label{font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:8px;text-align:center}
+
+/* Log */
+.log-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
+.log-entry{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.log-entry:last-child{border-bottom:none}
+.log-time{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;margin-left:auto;flex-shrink:0}
+.log-empty{color:var(--muted);font-size:13px;font-family:'DM Mono',monospace;padding:8px 0}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;right:28px;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:100;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;max-width:340px;line-height:1.4}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#10b981}
+.toast.err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#ef4444}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">📡 OOS Lookup <span>Admin</span></div>
+  <div class="topbar-actions">
+    <a href="/" target="_blank" class="btn-sm btn-ghost">👁 Voir le site</a>
+    <button class="btn-sm btn-danger" onclick="doLogout()">Déconnexion</button>
+  </div>
+</div>
+
+<main>
+
+  <div class="alert-render">
+    <span class="icon">⚡</span>
+    <div>
+      <strong>Important — Render Free Plan :</strong> le serveur s'endort après 15 min d'inactivité.
+      Au réveil, les données uploadées <strong>persistent</strong> si le disque est actif, sinon re-uploadez le fichier Excel.
+      C'est normal sur l'offre gratuite.
+    </div>
+  </div>
+
+  <!-- Statut -->
+  <div class="section-label">État de la base de données</div>
+  <div class="status-card">
+    <div class="status-left">
+      <div class="pulse-dot inactive" id="dot"></div>
+      <div class="status-text">
+        <h3 id="statusTitle">Chargement…</h3>
+        <p id="statusDesc">Connexion au serveur</p>
+      </div>
+    </div>
+    <div class="stats-group" id="statsGroup" style="display:none">
+      <div class="stat">
+        <div class="stat-val" id="statCount">—</div>
+        <div class="stat-lbl">Agents</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statDate">—</div>
+        <div class="stat-lbl">Dernière MàJ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload -->
+  <div class="section-label">Mettre à jour la base</div>
+  <div class="upload-zone" id="zone">
+    <input type="file" class="file-input" id="fileInput" accept=".xlsx,.xls,.csv">
+    <div class="upload-icon">📊</div>
+    <div class="upload-title">Glissez votre fichier Excel ici</div>
+    <div class="upload-sub">ou cliquez pour parcourir · max 25 Mo</div>
+    <div class="file-types">
+      <span class="file-type">.xlsx</span>
+      <span class="file-type">.xls</span>
+      <span class="file-type">.csv</span>
+    </div>
+    <div class="prog-wrap" id="progWrap">
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-label" id="progLabel">Chargement…</div>
+    </div>
+  </div>
+
+  <!-- Journal -->
+  <div class="section-label">Journal des opérations</div>
+  <div class="log-card">
+    <div id="logList"><div class="log-empty">Aucune opération pour cette session.</div></div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const logs = [];
+
+// ── Chargement initial ─────────────────────────────────────────────────────
+window.addEventListener('load', loadStatus);
+
+async function loadStatus() {
+  try {
+    const j = await (await fetch('/admin/info')).json();
+    const dot   = document.getElementById('dot');
+    const title = document.getElementById('statusTitle');
+    const desc  = document.getElementById('statusDesc');
+    const grp   = document.getElementById('statsGroup');
+
+    if (!j.loaded) {
+      dot.className = 'pulse-dot inactive';
+      title.textContent = 'Aucune base chargée';
+      desc.textContent  = 'Uploadez un fichier Excel pour démarrer';
+    } else {
+      dot.className = 'pulse-dot active';
+      title.textContent = j.filename || 'Base active';
+      desc.textContent  = 'Base de données opérationnelle · prête à la recherche';
+      grp.style.display = 'flex';
+      document.getElementById('statCount').textContent = j.count.toLocaleString('fr-FR');
+      document.getElementById('statDate').textContent  = new Date(j.lastUpdate).toLocaleDateString('fr-FR');
+    }
+  } catch { toast('Impossible de joindre le serveur', 'err'); }
+}
+
+// ── Upload ─────────────────────────────────────────────────────────────────
+const zone  = document.getElementById('zone');
+const input = document.getElementById('fileInput');
+
+zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+});
+input.addEventListener('change', () => { if (input.files[0]) uploadFile(input.files[0]); });
+
+async function uploadFile(file) {
+  zone.classList.add('busy');
+  const pw = document.getElementById('progWrap');
+  const pf = document.getElementById('progFill');
+  const pl = document.getElementById('progLabel');
+  pw.style.display = 'block';
+
+  let p = 0;
+  const iv = setInterval(() => {
+    p = Math.min(p + Math.random() * 12, 82);
+    pf.style.width = p + '%';
+    pl.textContent = `Traitement de ${file.name}…`;
+  }, 200);
+
+  try {
+    const fd = new FormData();
+    fd.append('excel', file);
+    const j = await (await fetch('/admin/upload', { method: 'POST', body: fd })).json();
+    clearInterval(iv);
+
+    if (j.success) {
+      pf.style.width = '100%';
+      pl.textContent = `✅ ${j.count.toLocaleString('fr-FR')} enregistrements importés`;
+      toast(`✅ ${j.count.toLocaleString('fr-FR')} lignes importées avec succès !`, 'ok');
+      addLog(`📥 ${j.filename} · ${j.count.toLocaleString('fr-FR')} enregistrements`);
+      loadStatus();
+    } else {
+      pf.style.width = '0';
+      pl.textContent = `❌ ${j.error}`;
+      toast(`❌ ${j.error}`, 'err');
+    }
+  } catch {
+    clearInterval(iv);
+    toast('Erreur lors de l\'upload.', 'err');
+  } finally {
+    zone.classList.remove('busy');
+    input.value = '';
+    setTimeout(() => { pw.style.display = 'none'; pf.style.width = '0'; }, 5000);
+  }
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────
+async function doLogout() {
+  await fetch('/admin/logout', { method: 'POST' });
+  window.location.href = '/admin';
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.className = `toast ${type}`, 4000);
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────
+function addLog(msg) {
+  const now = new Date().toLocaleTimeString('fr-FR');
+  logs.unshift({ msg, now });
+  document.getElementById('logList').innerHTML = logs.slice(0, 12).map(l => `
+    <div class="log-entry">
+      <span>📌</span><span>${l.msg}</span>
+      <span class="log-time">${l.now}</span>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
