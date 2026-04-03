@@ -156,8 +156,10 @@ function segInfo(s) {
 }
 
 function fmtNum(v) {
-  const n = parseFloat(v);
-  return isNaN(n) ? '—' : n.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+  if (v === null || v === undefined || v === '') return '—';
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
+  if (isNaN(n)) return '—';
+  return n.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 }
 
 function oosClass(pct) {

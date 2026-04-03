@@ -74,13 +74,26 @@ function parseExcelBuffer(buffer) {
   const wb   = XLSX.read(buffer, { type: 'buffer' });
   const ws   = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
   return rows.map(r => {
     const out = {};
-    for (const k of Object.keys(r)) {
-      const v = r[k];
-      out[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : String(v).trim();
+    for (const rawKey of Object.keys(r)) {
+      // Normaliser la clé : trim + supprimer espaces insécables et caractères invisibles
+      const k = rawKey.replace(/[\u00A0\u200B\uFEFF]/g, ' ').trim();
+      const v = r[rawKey];
+
+      if (typeof v === 'number') {
+        // Conserver les nombres comme nombres (pas de conversion en string)
+        out[k] = Math.round(v * 100) / 100;
+      } else {
+        out[k] = String(v).replace(/[\u00A0]/g, ' ').trim();
+      }
     }
-    out['Agent MSISDN'] = String(r['Agent MSISDN'] || '').replace(/\s/g, '');
+    // S'assurer que MSISDN est toujours une chaîne propre
+    const msisdnKey = Object.keys(out).find(k => k.toLowerCase().includes('msisdn'));
+    if (msisdnKey) {
+      out['Agent MSISDN'] = String(out[msisdnKey]).replace(/[\s\-]/g, '');
+    }
     return out;
   });
 }
