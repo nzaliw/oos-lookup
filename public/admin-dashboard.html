@@ -85,13 +85,9 @@ main{max-width:880px;margin:0 auto;padding:40px 24px;position:relative;z-index:1
 
 <main>
 
-  <div class="alert-render">
-    <span class="icon">⚡</span>
-    <div>
-      <strong>Important — Render Free Plan :</strong> le serveur s'endort après 15 min d'inactivité.
-      Au réveil, les données uploadées <strong>persistent</strong> si le disque est actif, sinon re-uploadez le fichier Excel.
-      C'est normal sur l'offre gratuite.
-    </div>
+  <div class="alert-render" id="mongoAlert">
+    <span class="icon">🍃</span>
+    <div id="mongoMsg">Vérification de la connexion MongoDB…</div>
   </div>
 
   <!-- Statut -->
@@ -112,6 +108,10 @@ main{max-width:880px;margin:0 auto;padding:40px 24px;position:relative;z-index:1
       <div class="stat">
         <div class="stat-val" id="statDate">—</div>
         <div class="stat-lbl">Dernière MàJ</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statMongo" style="font-size:20px">—</div>
+        <div class="stat-lbl">MongoDB</div>
       </div>
     </div>
   </div>
@@ -157,6 +157,19 @@ async function loadStatus() {
     const title = document.getElementById('statusTitle');
     const desc  = document.getElementById('statusDesc');
     const grp   = document.getElementById('statsGroup');
+    const alert = document.getElementById('mongoAlert');
+    const msg   = document.getElementById('mongoMsg');
+
+    // Statut MongoDB
+    if (j.mongoConnected) {
+      alert.style.background = 'rgba(16,185,129,.07)';
+      alert.style.borderColor = 'rgba(16,185,129,.25)';
+      msg.innerHTML = '<strong style="color:#10b981">MongoDB Atlas connecté ✅</strong> — Vos données sont persistantes et survivent aux redémarrages du serveur.';
+    } else {
+      alert.style.background = 'rgba(251,191,36,.07)';
+      alert.style.borderColor = 'rgba(251,191,36,.25)';
+      msg.innerHTML = '<strong style="color:#fbbf24">Mode mémoire ⚠️</strong> — MongoDB non connecté. Ajoutez la variable <code style="background:rgba(255,255,255,.1);padding:2px 6px;border-radius:4px">MONGO_URI</code> dans Render pour la persistance.';
+    }
 
     if (!j.loaded) {
       dot.className = 'pulse-dot inactive';
@@ -169,6 +182,7 @@ async function loadStatus() {
       grp.style.display = 'flex';
       document.getElementById('statCount').textContent = j.count.toLocaleString('fr-FR');
       document.getElementById('statDate').textContent  = new Date(j.lastUpdate).toLocaleDateString('fr-FR');
+      document.getElementById('statMongo').textContent = j.mongoConnected ? '🍃 Oui' : '💾 RAM';
     }
   } catch { toast('Impossible de joindre le serveur', 'err'); }
 }
