@@ -168,8 +168,10 @@ app.post('/admin/upload', (req, res) => {
       const records = parseExcelBuffer(req.file.buffer);
       if (!records.length) throw new Error('Fichier vide ou mal formaté.');
       if (!('Agent MSISDN' in records[0])) throw new Error('Colonne "Agent MSISDN" introuvable.');
-      await saveRecords(records, req.file.originalname);
-      res.json({ success: true, count: records.length, filename: req.file.originalname });
+      // Corriger l'encodage du nom de fichier (latin1 → utf8)
+      const filename = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+      await saveRecords(records, filename);
+      res.json({ success: true, count: records.length, filename });
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 });
